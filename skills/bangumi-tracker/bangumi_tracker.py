@@ -601,7 +601,9 @@ def cmd_collections(args):
         status = status_map.get(type_num, "unknown")
         emoji = status_emoji.get(status, "❓")
 
-        print(f"{emoji} [{status.upper()}] {subject.get('name_cn', subject.get('name', 'Unknown'))}")
+        # Use 'or' to handle empty string for name_cn
+        title = subject.get("name_cn") or subject.get("name", "Unknown")
+        print(f"{emoji} [{status.upper()}] {title}")
         print(f"   ID: {subject.get('id')} | Score: {subject.get('score', 'N/A')}")
         if item.get("ep_status"):
             print(f"   Progress: {item['ep_status']}/{subject.get('eps', '?')} eps")
@@ -716,7 +718,7 @@ def cmd_progress(args):
     status_map = {1: "wish", 2: "doing", 3: "collect", 4: "on_hold", 5: "dropped"}
     status_str = status_map.get(result.get('type'), 'unknown')
 
-    print(f"📺 {subject.get('name_cn', subject.get('name', 'Unknown'))}")
+    print(f"📺 {subject.get('name_cn') or subject.get('name', 'Unknown')}")
     print(f"   Status: {status_str}")
     print(f"   Progress: {result.get('ep_status', 0)}/{subject.get('eps', '?')} episodes")
     
@@ -753,6 +755,270 @@ def cmd_me(args):
         print(f"Group: {group_names.get(user['user_group'], user['user_group'])}")
     
     print("=" * 60)
+    return 0
+
+
+def cmd_collect_character(args):
+    """Collect/uncollect a character"""
+    token = get_valid_token()
+    if not token:
+        print("❌ Not logged in. Run 'auth' first.")
+        return 1
+
+    character_id = args.character_id
+    action = args.action  # "collect" or "uncollect"
+
+    if action == "collect":
+        url = f"{BASE_URL}/characters/{character_id}/collect"
+        method = "POST"
+        print(f"⭐ Collecting character {character_id}...")
+    else:
+        url = f"{BASE_URL}/characters/{character_id}/collect"
+        method = "DELETE"
+        print(f"🗑️  Removing character {character_id} from collection...")
+
+    req = urllib.request.Request(url, headers={
+        **HEADERS,
+        "Authorization": f"Bearer {token}"
+    }, method=method)
+
+    try:
+        with urllib.request.urlopen(req) as response:
+            if action == "collect":
+                print("✅ Character collected!")
+            else:
+                print("✅ Character removed from collection!")
+            return 0
+    except urllib.error.HTTPError as e:
+        print(f"❌ Failed: {e.reason}")
+        return 1
+
+
+def cmd_collect_person(args):
+    """Collect/uncollect a person"""
+    token = get_valid_token()
+    if not token:
+        print("❌ Not logged in. Run 'auth' first.")
+        return 1
+
+    person_id = args.person_id
+    action = args.action  # "collect" or "uncollect"
+
+    if action == "collect":
+        url = f"{BASE_URL}/persons/{person_id}/collect"
+        method = "POST"
+        print(f"⭐ Collecting person {person_id}...")
+    else:
+        url = f"{BASE_URL}/persons/{person_id}/collect"
+        method = "DELETE"
+        print(f"🗑️  Removing person {person_id} from collection...")
+
+    req = urllib.request.Request(url, headers={
+        **HEADERS,
+        "Authorization": f"Bearer {token}"
+    }, method=method)
+
+    try:
+        with urllib.request.urlopen(req) as response:
+            if action == "collect":
+                print("✅ Person collected!")
+            else:
+                print("✅ Person removed from collection!")
+            return 0
+    except urllib.error.HTTPError as e:
+        print(f"❌ Failed: {e.reason}")
+        return 1
+
+
+def cmd_episodes(args):
+    """Get episode collection status"""
+    token = get_valid_token()
+    if not token:
+        print("❌ Not logged in. Run 'auth' first.")
+        return 1
+
+    subject_id = args.subject_id
+
+    # Get subject info first
+    subject = api_get(f"/subjects/{subject_id}", token=token)
+    if "error" in subject:
+        print(f"❌ Failed to get subject: {subject['error']}")
+        return 1
+
+    subject_name = subject.get("name_cn") or subject.get("name", "Unknown")
+
+    # Get episode collection
+    result = api_get(f"/users/-/collections/{subject_id}/episodes", token=token)
+
+    if "error" in result:
+        print(f"❌ Failed to get episodes: {result['error']}")
+        return 1
+
+    data = result.get("data", [])
+    if not data:
+        print(f"📺 {subject_name}")
+        print("   No episode progress recorded")
+        return 0
+
+    # Group by episode type (本篇, SP, OP, ED, etc)
+    ep_types = {0: "本篇", 1: "SP", 2: "OP", 3: "ED", 4: "预告", 5: "MAD", 6: "其他"}
+    groups = {}
+    for item in data:
+        ep_data = item.get("episode", {})
+        # episode type is in episode.type, not item.type
+        t = ep_data.get("type", 0)
+        groups.setdefault(t, []).append({**item, "episode": ep_data})
+
+    print(f"📺 {subject_name}")
+    print(f"   Total episodes: {subject.get('total_episodes', len(data))}")
+    print()
+
+    for type_id, type_name in ep_types.items():
+        eps = groups.get(type_id, [])
+        if not eps:
+            continue
+        # status: 1=wish, 2=watched
+        watched = sum(1 for ep in eps if ep.get("type") == 2)  # type=2 means watched
+        print(f"— {type_name} ({watched}/{len(eps)}) —")
+        for ep in eps:
+            ep_data = ep.get("episode", {})
+            ep_num = ep_data.get("ep", ep_data.get("sort", "?"))
+            # collection status: 1=wish, 2=watched
+            status = ep.get("type", 0)
+            status_str = "✅" if status == 2 else "⬜"
+            name = ep_data.get("name_cn") or ep_data.get("name", "")
+            print(f"   {status_str} 第{ep_num}集 {name}")
+        print()
+
+    return 0
+
+
+def cmd_watch(args):
+    """Mark episode as watched/not watched"""
+    token = get_valid_token()
+    if not token:
+        print("❌ Not logged in. Run 'auth' first.")
+        return 1
+
+    episode_id = args.episode_id
+    status = args.status  # "watched" or "unwatched"
+
+    # Get episode info first
+    episode = api_get(f"/episodes/{episode_id}", token=token)
+    if "error" in episode:
+        print(f"❌ Failed to get episode: {episode['error']}")
+        return 1
+
+    ep_name = episode.get("name_cn") or episode.get("name", f"Episode {episode_id}")
+
+    # Status mapping: 1=wish, 2=watched
+    status_map = {"watched": 2, "unwatched": 1}
+    type_val = status_map[status]
+
+    if status == "watched":
+        print(f"✅ Marking {ep_name} as watched...")
+    else:
+        print(f"⬜ Marking {ep_name} as not watched...")
+
+    url = f"{BASE_URL}/users/-/collections/-/episodes/{episode_id}"
+    data = {"type": type_val}
+    body = json.dumps(data).encode('utf-8')
+    req = urllib.request.Request(url, data=body, headers={
+        **HEADERS,
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }, method='PUT')
+
+    try:
+        with urllib.request.urlopen(req) as response:
+            print(f"✅ Episode status updated!")
+            return 0
+    except urllib.error.HTTPError as e:
+        print(f"❌ Failed: {e.reason}")
+        return 1
+
+
+def cmd_my_characters(args):
+    """List collected characters"""
+    token = get_valid_token()
+    if not token:
+        print("❌ Not logged in. Run 'auth' first.")
+        return 1
+
+    # Get user info
+    user = api_get("/me", token=token)
+    if "error" in user:
+        print(f"❌ Failed to get user: {user['error']}")
+        return 1
+
+    username = user.get("username")
+
+    # Get character collections
+    result = api_get(f"/users/{username}/collections/-/characters", token=token)
+
+    if "error" in result:
+        print(f"❌ Failed to get characters: {result['error']}")
+        return 1
+
+    data = result.get("data", [])
+    if not data:
+        print("⭐ No collected characters")
+        return 0
+
+    print(f"⭐ Collected Characters ({len(data)})")
+    print()
+    for item in data:
+        # API返回的直接是角色信息，不是嵌套结构
+        name = item.get("name", "Unknown")
+        name_cn = item.get("name_cn", "")
+        if name_cn and name_cn != name:
+            name = f"{name} / {name_cn}"
+        print(f"  {name} (ID: {item.get('id')})")
+
+    print()
+    print(f"Total: {len(data)} characters")
+    return 0
+
+
+def cmd_my_persons(args):
+    """List collected persons"""
+    token = get_valid_token()
+    if not token:
+        print("❌ Not logged in. Run 'auth' first.")
+        return 1
+
+    # Get user info
+    user = api_get("/me", token=token)
+    if "error" in user:
+        print(f"❌ Failed to get user: {user['error']}")
+        return 1
+
+    username = user.get("username")
+
+    # Get person collections
+    result = api_get(f"/users/{username}/collections/-/persons", token=token)
+
+    if "error" in result:
+        print(f"❌ Failed to get persons: {result['error']}")
+        return 1
+
+    data = result.get("data", [])
+    if not data:
+        print("⭐ No collected persons")
+        return 0
+
+    print(f"⭐ Collected Persons ({len(data)})")
+    print()
+    for item in data:
+        # API返回的直接是人物信息，不是嵌套结构
+        name = item.get("name", "Unknown")
+        name_cn = item.get("name_cn", "")
+        if name_cn and name_cn != name:
+            name = f"{name} / {name_cn}"
+        print(f"  {name} (ID: {item.get('id')})")
+
+    print()
+    print(f"Total: {len(data)} persons")
     return 0
 
 
@@ -804,7 +1070,38 @@ def main():
     # Me command
     me_parser = subparsers.add_parser("me", help="Get user info")
     me_parser.set_defaults(func=cmd_me)
-    
+
+    # Collect character command
+    char_parser = subparsers.add_parser("collect-character", help="Collect/uncollect a character")
+    char_parser.add_argument("character_id", type=int, help="Character ID")
+    char_parser.add_argument("action", choices=["collect", "uncollect"], help="Action")
+    char_parser.set_defaults(func=cmd_collect_character)
+
+    # My characters command
+    my_chars_parser = subparsers.add_parser("my-characters", help="List collected characters")
+    my_chars_parser.set_defaults(func=cmd_my_characters)
+
+    # Collect person command
+    person_parser = subparsers.add_parser("collect-person", help="Collect/uncollect a person")
+    person_parser.add_argument("person_id", type=int, help="Person ID")
+    person_parser.add_argument("action", choices=["collect", "uncollect"], help="Action")
+    person_parser.set_defaults(func=cmd_collect_person)
+
+    # My persons command
+    my_persons_parser = subparsers.add_parser("my-persons", help="List collected persons")
+    my_persons_parser.set_defaults(func=cmd_my_persons)
+
+    # Episodes command
+    eps_parser = subparsers.add_parser("episodes", help="Get episode collection status")
+    eps_parser.add_argument("subject_id", type=int, help="Subject ID")
+    eps_parser.set_defaults(func=cmd_episodes)
+
+    # Watch command
+    watch_parser = subparsers.add_parser("watch", help="Mark episode as watched/unwatched")
+    watch_parser.add_argument("episode_id", type=int, help="Episode ID")
+    watch_parser.add_argument("status", choices=["watched", "unwatched"], help="Status")
+    watch_parser.set_defaults(func=cmd_watch)
+
     args = parser.parse_args()
     
     if not args.command:

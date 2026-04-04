@@ -58,6 +58,30 @@ python bangumi_tracker.py progress 428477
 
 # User info
 python bangumi_tracker.py me
+
+# === Character Collection ===
+# Collect/uncollect character
+python bangumi_tracker.py collect-character 42084 collect
+python bangumi_tracker.py collect-character 42084 uncollect
+
+# List collected characters
+python bangumi_tracker.py my-characters
+
+# === Person Collection ===
+# Collect/uncollect person
+python bangumi_tracker.py collect-person 12345 collect
+python bangumi_tracker.py collect-person 12345 uncollect
+
+# List collected persons
+python bangumi_tracker.py my-persons
+
+# === Episode Progress ===
+# Get episode collection status
+python bangumi_tracker.py episodes 428477
+
+# Mark episode as watched/unwatched
+python bangumi_tracker.py watch 123456 watched
+python bangumi_tracker.py watch 123456 unwatched
 ```
 
 ## Security
