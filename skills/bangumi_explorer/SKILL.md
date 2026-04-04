@@ -65,6 +65,12 @@ python bangumi.py rank [--type anime|book|game|music|real] [--top 20]
 
 # Person search (voice actors, staff)
 python bangumi.py person "<keyword>"
+
+# Daily broadcast calendar
+python bangumi.py calendar
+
+# Character search
+python bangumi.py character "<keyword>"
 ```
 
 ## Parameters

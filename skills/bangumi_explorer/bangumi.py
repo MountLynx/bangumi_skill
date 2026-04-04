@@ -43,6 +43,8 @@ CACHE_TTL = {
     "season": 21600,     # 6h
     "rank": 21600,       # 6h
     "person": 86400,     # 24h
+    "calendar": 21600,  # 6h
+    "character": 86400, # 24h
 }
 RATE_LIMIT = 0.5  # 秒
 
@@ -489,6 +491,125 @@ def format_persons(persons: list, keyword: str) -> str:
     return "\n".join(lines)
 
 
+def format_calendar(calendar: list) -> str:
+    """格式化每日放送"""
+    if not calendar:
+        return "【每日放送】暂无数据"
+
+    weekday_map = {
+        1: "周一", 2: "周二", 3: "周三", 4: "周四",
+        5: "周五", 6: "周六", 7: "周日"
+    }
+
+    lines = ["【每日放送】", ""]
+    for day in calendar:
+        weekday = day.get("weekday", {})
+        wday_cn = weekday.get("cn", "")
+        wday_id = weekday.get("id", 0)
+        items = day.get("items", [])
+
+        if items:
+            lines.append(f"— {wday_cn} —")
+            for item in items:
+                title = item.get("name_cn") or item.get("name", "未知")
+                eps = item.get("eps", item.get("ep", ""))
+                if eps:
+                    title += f" (第{eps}集)"
+                lines.append(f"  {title}")
+            lines.append("")
+
+    return "\n".join(lines).rstrip()
+
+
+def format_character(character: dict) -> str:
+    """格式化角色详情"""
+    if not character:
+        return "未找到该角色"
+
+    name = character.get("name", "未知")
+    name_cn = character.get("name_cn", "")
+
+    lines = [f"【{name}】"]
+    if name_cn and name_cn != name:
+        lines.append(name_cn)
+
+    # 性别和血型
+    info_parts = []
+    gender = character.get("gender", "")
+    if gender:
+        info_parts.append(gender)
+    blood_type = character.get("blood_type")
+    if blood_type:
+        bt = {1: "A", 2: "B", 3: "AB", 4: "O"}.get(blood_type, "")
+        if bt:
+            info_parts.append(f"血型: {bt}")
+    if info_parts:
+        lines.append(" / ".join(info_parts))
+
+    # 生日
+    birth = ""
+    if character.get("birth_year"):
+        birth = str(character.get("birth_year", ""))
+        if character.get("birth_mon"):
+            birth += f".{character['birth_mon']:02d}"
+            if character.get("birth_day"):
+                birth += f".{character['birth_day']:02d}"
+    if birth:
+        lines.append(f"生日: {birth}")
+
+    # infobox 信息
+    for item in (character.get("infobox", []) or []):
+        key = item.get("key", "")
+        val = item.get("value", "")
+        if key and val:
+            lines.append(f"{key}：{val}")
+
+    # 简介
+    summary = (character.get("summary") or "").strip()
+    if summary and len(summary) > 10:
+        if len(summary) > 300:
+            summary = summary[:300] + "……"
+        lines.append("")
+        lines.append(summary)
+
+    return "\n".join(lines)
+
+
+def format_characters(characters: list, keyword: str) -> str:
+    """格式化角色搜索列表"""
+    if not characters:
+        return f'【角色搜索】「{keyword}」 — 未找到结果'
+
+    lines = [f'【角色搜索】「{keyword}」 — 找到 {len(characters)} 条', ""]
+    for i, c in enumerate(characters, 1):
+        name = c.get("name", "未知")
+        name_cn = c.get("name_cn", "")
+        gender = c.get("gender", "")
+        summary = c.get("summary", "")
+
+        line = f"{i}. {name}"
+        if name_cn and name_cn != name:
+            line += f" / {name_cn}"
+        line += f"（ID: {c['id']}）"
+
+        parts = []
+        if gender:
+            parts.append(gender)
+        if summary:
+            brief = summary.strip().split("\n")[0].strip()
+            if len(brief) > 50:
+                brief = brief[:50] + "…"
+            if brief:
+                parts.append(brief)
+
+        if parts:
+            line += f" — {' / '.join(parts)}"
+
+        lines.append(line)
+
+    return "\n".join(lines)
+
+
 # === 命令入口 ===
 
 def cmd_search(args):
@@ -622,6 +743,54 @@ def cmd_person(args):
         print(f'【人物搜索】「{keyword}」 — 未找到结果')
 
 
+def cmd_calendar(args):
+    """每日放送"""
+    # /calendar 是旧版 API，不在 /v0 下
+    cache_key = "today"
+    cached = get_cache("calendar", cache_key)
+    if cached is not None:
+        data = cached
+    else:
+        _rate_limit()
+        url = "https://api.bgm.tv/calendar"
+        req = urllib.request.Request(url, headers=HEADERS)
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                set_cache("calendar", cache_key, data)
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="replace") if e.fp else ""
+            print(f"❌ API 错误 {e.code}: {body[:200]}", file=sys.stderr)
+            sys.exit(1)
+        except urllib.error.URLError as e:
+            print(f"❌ 网络错误: {e.reason}", file=sys.stderr)
+            sys.exit(1)
+
+    print(format_calendar(data))
+
+
+def cmd_character(args):
+    keyword = args.keyword
+    # 搜索角色
+    body = {"keyword": keyword}
+    resp = api_post("/search/characters", body)
+    characters = resp
+    if not isinstance(characters, list):
+        characters = characters.get("data", characters.get("list", []))
+
+    if characters and len(characters) > 0:
+        if len(characters) == 1:
+            # 只有一个结果，直接取详情
+            cid = characters[0]["id"]
+            data = api_get(f"/characters/{cid}", cache_category="character", cache_key=str(cid))
+            print(format_character(data))
+        else:
+            # 多个结果，列出
+            print(format_characters(characters, keyword))
+    else:
+        print(f'【角色搜索】「{keyword}」 — 未找到结果')
+
+
 # === CLI ===
 
 def main():
@@ -659,6 +828,13 @@ def main():
     p_person = sub.add_parser("person", help="查询声优/制作人员")
     p_person.add_argument("keyword", help="人物关键词")
 
+    # calendar
+    p_calendar = sub.add_parser("calendar", help="每日放送")
+
+    # character
+    p_character = sub.add_parser("character", help="查询动画角色")
+    p_character.add_argument("keyword", help="角色关键词")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -675,6 +851,8 @@ def main():
         "season": cmd_season,
         "rank": cmd_rank,
         "person": cmd_person,
+        "calendar": cmd_calendar,
+        "character": cmd_character,
     }
     commands[args.command](args)
 
