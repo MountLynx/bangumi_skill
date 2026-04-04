@@ -542,27 +542,31 @@ def cmd_collections(args):
     if not token:
         print("❌ Not logged in. Run 'auth' first.")
         return 1
-    
+
     # Get user info first
     user = api_get("/me", token=token)
     if "error" in user:
         print(f"❌ Failed to get user info: {user['error']}")
         return 1
 
-    user_id = user.get("id")
-    nickname = user.get('nickname', user.get('username'))
+    username = user.get("username")
+    nickname = user.get('nickname', username)
     print(f"📚 Collections for {nickname}\n")
-    
+
     # Build params
+    # Bangumi API: type=收藏状态(1=wish,2=doing,3=collect,4=on_hold,5=dropped)
+    # subject_type=条目类型(1=book,2=anime,3=music,4=game,6=real)
     params = {}
     if args.type:
         type_map = {"anime": 2, "book": 1, "game": 4, "music": 3, "real": 6}
         params["subject_type"] = type_map.get(args.type, 2)
     if args.status:
-        params["type"] = args.status
-    
-    # Get collections using numeric user ID
-    collections = api_get(f"/users/{user_id}/collections", params=params, token=token)
+        # Convert status string to numeric
+        status_map = {"wish": 1, "doing": 2, "collect": 3, "on_hold": 4, "dropped": 5}
+        params["type"] = status_map.get(args.status)
+
+    # Get collections using username (as per official API spec)
+    collections = api_get(f"/users/{username}/collections", params=params, token=token)
     
     if "error" in collections:
         print(f"❌ Failed to get collections: {collections['error']}")
@@ -628,15 +632,15 @@ def cmd_collect(args):
 
     print(f"📝 Setting collection status to '{status}' for subject {subject_id}...")
 
-    # Bangumi API uses POST for new collections and PUT for updates
+    # Bangumi API: POST for new collections, PATCH for updates
     data = {"type": status_map[status]}
     result = api_post(f"/users/-/collections/{subject_id}", data, token=token)
 
     if "error" in result:
-        # Try PUT for update
+        # Try PATCH for update (as per official API spec)
         url = f"{BASE_URL}/users/-/collections/{subject_id}"
         body = json.dumps(data).encode('utf-8')
-        req = urllib.request.Request(url, data=body, headers={**HEADERS, "Authorization": f"Bearer {token}"}, method='PUT')
+        req = urllib.request.Request(url, data=body, headers={**HEADERS, "Authorization": f"Bearer {token}"}, method='PATCH')
         req.add_header("Content-Type", "application/json")
 
         try:
@@ -658,7 +662,7 @@ def cmd_uncollect(args):
         print("❌ Not logged in. Run 'auth' first.")
         return 1
 
-    # Get user info first to get numeric user ID
+    # Get user info to get username
     user = api_get("/me", token=token)
     if "error" in user:
         print(f"❌ Failed to get user info: {user['error']}")
@@ -667,8 +671,13 @@ def cmd_uncollect(args):
     subject_id = args.subject_id
     print(f"🗑️  Removing subject {subject_id} from collections...")
 
+    # Official API: No DELETE endpoint exists, use PATCH with type=0 to remove
+    # type=0 means "not in any collection"
     url = f"{BASE_URL}/users/-/collections/{subject_id}"
-    req = urllib.request.Request(url, headers={**HEADERS, "Authorization": f"Bearer {token}"}, method='DELETE')
+    data = {"type": 0}  # 0 = no collection status (remove from collection)
+    body = json.dumps(data).encode('utf-8')
+    req = urllib.request.Request(url, data=body, headers={**HEADERS, "Authorization": f"Bearer {token}"}, method='PATCH')
+    req.add_header("Content-Type", "application/json")
 
     try:
         with urllib.request.urlopen(req) as response:
@@ -686,17 +695,17 @@ def cmd_progress(args):
         print("❌ Not logged in. Run 'auth' first.")
         return 1
 
-    # Get user info to get numeric ID
+    # Get user info to get username
     user = api_get("/me", token=token)
     if "error" in user:
         print(f"❌ Failed to get user info: {user['error']}")
         return 1
 
-    user_id = user.get("id")
+    username = user.get("username")
     subject_id = args.subject_id
 
-    # Get collection info with progress using numeric user ID
-    result = api_get(f"/users/{user_id}/collections/{subject_id}", token=token)
+    # Get collection info using username (as per official API spec)
+    result = api_get(f"/users/{username}/collections/{subject_id}", token=token)
     
     if "error" in result:
         print(f"❌ Failed to get progress: {result['error']}")
