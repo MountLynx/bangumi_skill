@@ -26,7 +26,7 @@ if sys.stderr and hasattr(sys.stderr, "buffer"):
 # === 常量 ===
 
 BASE_URL = "https://api.bgm.tv/v0"
-HEADERS = {"User-Agent": "clawbot/bangumi-explorer/1.0 (https://github.com/clawbot/bangumi-explorer)"}
+HEADERS = {"User-Agent": "MountLynx/bangumi_skill (https://github.com/MountLynx/bangumi_skill)"}
 TYPE_MAP = {
     "anime": 2, "book": 1, "game": 4,
     "music": 3, "real": 6,
@@ -41,6 +41,7 @@ CACHE_TTL = {
     "search": 3600,      # 1h
     "subject": 86400,    # 24h
     "season": 21600,     # 6h
+    "rank": 21600,       # 6h
     "person": 86400,     # 24h
 }
 RATE_LIMIT = 0.5  # 秒
@@ -136,10 +137,12 @@ def api_get(path: str, params: dict = None, cache_category: str = None, cache_ke
         sys.exit(1)
 
 
-def api_post(path: str, data: dict = None):
-    """POST 请求"""
+def api_post(path: str, data: dict = None, params: dict = None):
+    """POST 请求，支持 URL 查询参数"""
     _rate_limit()
     url = f"{BASE_URL}{path}"
+    if params:
+        url += "?" + urllib.parse.urlencode(params)
     body = json.dumps(data, ensure_ascii=False).encode("utf-8") if data else b"{}"
     req = urllib.request.Request(url, data=body, headers={
         **HEADERS,
@@ -508,15 +511,20 @@ def cmd_search(args):
     page_size = min(limit, 25)
 
     while len(all_results) < limit:
-        resp = api_post("/search/subjects", body)
+        # limit/offset 需要作为 query 参数传递
+        resp = api_post("/search/subjects", body, params={"limit": page_size, "offset": offset})
         # POST 搜索不走缓存参数，手动缓存
-        data = resp
-        if not isinstance(data, list):
-            data = data.get("data", data.get("list", []))
+
+        # 根据 v0.yaml，响应是 Paged_Subject 格式
+        if isinstance(resp, dict):
+            data = resp.get("data", [])
+            total = resp.get("total", 0)
+        else:
+            data = []
         if not data:
             break
         all_results.extend(data)
-        if len(data) < page_size:
+        if len(data) < page_size or (total > 0 and offset >= total):
             break
         offset += page_size
 
@@ -584,7 +592,7 @@ def cmd_rank(args):
     cache_key = f"{subject_type}_{top}"
     data = api_get("/subjects", params={
         "type": type_id, "sort": "rank", "limit": top,
-    }, cache_category="season", cache_key=cache_key)
+    }, cache_category="rank", cache_key=cache_key)
 
     if not isinstance(data, list):
         data = data.get("data", [])

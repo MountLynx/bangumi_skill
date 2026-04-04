@@ -31,7 +31,7 @@ python --version  # or python3 --version
 ### Fallback API Reference
 
 - **API Base**: `https://api.bgm.tv/v0`
-- **User-Agent Required**: `clawbot/1.0 (private)`
+- **User-Agent Required**: `MountLynx/bangumi_skill (https://github.com/MountLynx/bangumi_skill)`
 - **Rate Limit**: 0.5s between requests
 - **OpenAPI Spec**: https://github.com/bangumi/api/blob/master/open-api/v0.yaml
 - **API Docs**: https://github.com/bangumi/api

@@ -60,7 +60,7 @@ DEFAULT_PORT = 17321
 CONFIG_DIR = Path.home() / ".bangumi"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 TOKEN_FILE = CONFIG_DIR / "token.json"
-HEADERS = {"User-Agent": "bangumi-tracker/1.0 (private)"}
+HEADERS = {"User-Agent": "MountLynx/bangumi_skill (https://github.com/MountLynx/bangumi_skill)"}
 
 # Credential target names for Windows Credential Manager
 CRED_TARGET_CLIENT_SECRET = "BangumiTracker:client_secret"
