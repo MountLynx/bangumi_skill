@@ -1,15 +1,20 @@
 ---
-name: bangumi_explorer
-description: >
-  Query Bangumi (bgm.tv) for anime, manga, light novels, games, and music.
-  Search subjects, view details and episode lists, browse seasonal anime charts,
-  rating rankings, and look up voice actors / staff. No authentication required.
-  Trigger when user asks about: anime search, new anime this season, season chart,
-  anime ranking, anime details, episode list, voice actor / seiyuu lookup,
-  bgm, bangumi, or any ACGN subject inquiry.
+name: bangumi-explorer
+description: Query Bangumi (bgm.tv) for anime, manga, light novels, games, and music. Search subjects, view details and episode lists, browse seasonal anime charts, rating rankings, and look up voice actors / staff. No authentication required.
 ---
 
-# Bangumi Explorer — Public Query
+# Bangumi Explorer
+
+Query Bangumi (bgm.tv) for anime, manga, light novels, games, and music.
+
+## When to Use
+
+Use this skill when the user asks about:
+- Anime search, manga search, game search
+- New anime this season, season chart
+- Anime ranking, anime details, episode list
+- Voice actor / seiyuu lookup
+- Bangumi, bgm, or any ACGN subject inquiry
 
 ## Environment Check
 
@@ -31,9 +36,16 @@ python --version  # or python3 --version
 - **OpenAPI Spec**: https://github.com/bangumi/api/blob/master/open-api/v0.yaml
 - **API Docs**: https://github.com/bangumi/api
 
-## Commands (Python Mode - Recommended)
+## Steps
 
-Run `bangumi.py` via `exec` in the skill directory. Present script output as-is — do not reformat.
+1. Check Python environment availability
+2. If Python available: Run `bangumi.py` commands via `exec`
+3. If Python not available: Use fallback API calls via `web_fetch` or `browser`
+4. Present script output as-is — do not reformat
+
+## Commands
+
+Run `bangumi.py` via `exec` in the skill directory:
 
 ```bash
 # Search subjects (default: anime)
