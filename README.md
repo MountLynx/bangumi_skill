@@ -51,6 +51,7 @@ npx skills add MountLynx/bangumi_skill --all
 - **功能**：bangumi-explorer 全部功能 + OAuth 登录 + 收藏管理 + 观看进度标记
 - **特点**：需要 Bangumi 账号授权
 - **适用**：需要管理个人收藏和进度的用户
+- **安全存储**：敏感信息（client_secret、access_token、refresh_token）存储在 Windows 凭据管理器中，非 Windows 系统自动回退到文件存储
 - **状态**：🚧 开发中
 
 ### bangumi-tracker-web
@@ -89,6 +90,23 @@ python bangumi.py person "花泽香菜"
 - **API**: Bangumi API v0
 - **缓存**: `~/.bangumi/cache/`（自动过期清理）
 - **限速**: 0.5s 请求间隔（尊重 Bangumi API）
+
+### bangumi-tracker 信息存储
+
+bangumi-tracker 会安全存储您的敏感信息：
+
+| 信息 | 存储位置 (Windows) | 存储位置 (其他系统) |
+|------|-------------------|-------------------|
+| client_id | `~/.bangumi/config.json` | `~/.bangumi/config.json` |
+| client_secret | Windows 凭据管理器 | `~/.bangumi/config.json` |
+| access_token | Windows 凭据管理器 | `~/.bangumi/token.json` |
+| refresh_token | Windows 凭据管理器 | `~/.bangumi/token.json` |
+| expires_at | `~/.bangumi/token.json` | `~/.bangumi/token.json` |
+
+**安全说明**：
+- Windows 用户：client_secret、access_token、refresh_token 会存储在 Windows 凭据管理器中，比普通文件更安全
+- 非 Windows 用户：自动回退到文件存储
+- 如需清除所有存储的信息，可运行 `python bangumi_tracker.py logout`
 
 ### 关于 Python 环境
 

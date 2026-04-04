@@ -28,8 +28,6 @@ Use this skill when the user wants to:
 
 ### Step 2: Configure the Skill
 
-Create `config.json` in the skill directory:
-
 ```bash
 python bangumi_tracker.py config --client-id YOUR_CLIENT_ID --client-secret YOUR_CLIENT_SECRET
 ```
@@ -39,10 +37,11 @@ Or manually create `~/.bangumi/config.json`:
 ```json
 {
   "client_id": "your-client-id",
-  "client_secret": "your-client-secret",
   "redirect_uri": "http://localhost:17321/callback"
 }
 ```
+
+> **Note**: On Windows, your `client_secret` is securely stored in Windows Credential Manager instead of the config file.
 
 ### Step 3: Authenticate
 
@@ -54,9 +53,11 @@ python bangumi_tracker.py auth
 
 This will:
 1. Open your browser to Bangumi authorization page
-2. You login and authorize the app
-3. Callback to localhost saves the token
-4. Token stored in `~/.bangumi/token.json`
+2. **If not logged in**: You'll be redirected to the login page first, then authorize after logging in
+3. You authorize the app
+4. Callback to localhost saves the token
+
+> **Important**: The OAuth flow requires browser interaction. Make sure you can access the callback URL `http://localhost:17321/callback` on your machine.
 
 ## Commands
 
@@ -95,12 +96,6 @@ python bangumi_tracker.py uncollect <subject_id>
 ```bash
 # Get watch progress for a subject
 python bangumi_tracker.py progress <subject_id>
-
-# Mark episode as watched
-python bangumi_tracker.py watch <subject_id> <episode_id>
-
-# Mark multiple episodes
-python bangumi_tracker.py watch-batch <subject_id> <episode_ids...>
 ```
 
 ### User Info
@@ -119,15 +114,48 @@ python bangumi_tracker.py me
 
 ## Data Storage
 
-All data stored in `~/.bangumi/`:
+### Windows
+On Windows, sensitive data is stored securely using Windows Credential Manager:
+- **Client ID**: `~/.bangumi/config.json`
+- **Client Secret**: Windows Credential Manager (`BangumiTracker:client_secret`)
+- **Access Token**: Windows Credential Manager (`BangumiTracker:access_token`)
+- **Refresh Token**: Windows Credential Manager (`BangumiTracker:refresh_token`)
+- **Expires At**: `~/.bangumi/token.json` (non-sensitive timestamp only)
 
-- `config.json` - OAuth app credentials (you create this)
-- `token.json` - Access/refresh tokens (auto-generated after auth)
-- `cache/` - API response cache
+### Other Platforms
+On macOS/Linux, data is stored in files:
+- `~/.bangumi/config.json` - OAuth app credentials
+- `~/.bangumi/token.json` - Access/refresh tokens
 
-## Notes
+## Security Notes
 
-- Requires Python 3.9+
-- OAuth token auto-refreshes when expired
+- **Windows**: Uses Windows Credential Manager for secure storage
+- **Other Platforms**: Tokens stored in plain JSON files (use with caution)
+- Token auto-refreshes when expired
 - All API requests respect Bangumi rate limits
-- Token stored locally, never uploaded
+- Nothing is uploaded to external servers
+
+## Troubleshooting
+
+### "Callback server failed" or "No authorization code received"
+
+- Make sure `http://localhost:17321/callback` is accessible
+- Check that your OAuth app's Callback URL matches exactly
+- Try running the command again
+
+### "Token expired" errors
+
+- Run `python bangumi_tracker.py auth` to re-authorize
+- Your refresh token should automatically handle expiration
+
+### Check credential storage (Windows)
+
+To view stored credentials:
+1. Open Windows Credential Manager (Control Panel → Credential Manager)
+2. Look for entries starting with `BangumiTracker:`
+
+## Requirements
+
+- Python 3.9+
+- Internet access to Bangumi API
+- Browser for OAuth flow
