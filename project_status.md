@@ -18,9 +18,9 @@
 
 ### 当前进度
 
-- ✅ **V1 已完成** — 功能完整，待测试验证
-- ⏳ **V2 未开始** — 待V1验证后开发
-- ⏳ **V3 未开始** — 待V2完成后开发
+- ✅ **bangumi_explorer 已完成** — 功能完整，待测试验证
+- ⏳ **bangumi_tracker 未开始** — 待 bangumi_explorer 验证后开发
+- ⏳ **bangumi_tracker_web 未开始** — 待 bangumi_tracker 完成后开发
 
 ---
 
@@ -48,7 +48,7 @@ bangumi_skill/
 
 ---
 
-## 三、V1 详细状态（bangumi_explorer）
+## 三、bangumi_explorer 详细状态
 
 ### 功能清单
 
@@ -74,11 +74,11 @@ bangumi_skill/
 
 - [ ] 运行测试验证各命令正常
 - [ ] 处理边界情况（API异常、空结果等）
-- [ ] 准备 V1 Release（打 Tag v1.0）
+- [ ] 准备 bangumi_explorer Release（打 Tag v1.0）
 
 ---
 
-## 四、V2 规划（bangumi_tracker）
+## 四、bangumi_tracker 规划
 
 ### 新增功能
 
@@ -98,11 +98,11 @@ bangumi_skill/
 
 ### 开发时机
 
-V1 测试验证通过后开始
+bangumi_explorer 测试验证通过后开始
 
 ---
 
-## 五、V3 规划（bangumi_tracker_web）
+## 五、bangumi_tracker_web 规划
 
 ### 新增内容
 
@@ -113,7 +113,7 @@ V1 测试验证通过后开始
 
 ### 开发时机
 
-V2 完成后开始
+bangumi_tracker 完成后开始
 
 ---
 
@@ -123,13 +123,13 @@ V2 完成后开始
 
 1. **本文件**（`PROJECT_STATUS.md`）— 了解当前进度
 2. **`bangumi-dev-plan.md`** — 了解详细设计
-3. **`bangumi_explorer/skill.md`** — 了解V1触发词和命令
+3. **`bangumi_explorer/skill.md`** — 了解 bangumi_explorer 触发词和命令
 4. **`bangumi_explorer/bangumi.py`** — 查看具体实现
 
 ### 关键命令测试
 
 ```bash
-# 进入V1目录
+# 进入 bangumi_explorer 目录
 cd bangumi_skill/bangumi_explorer
 
 # 测试搜索
@@ -154,15 +154,15 @@ python bangumi.py rank --top 10
 | `bangumi_eval.md` | 可行性评估（API调研、技术选型） |
 | `bangumi-dev-plan.md` | 完整开发计划（三版详细设计、Token优化策略） |
 | `git.md` | Git管理方案（分支策略、Tag管理、Release流程） |
-| `bangumi_explorer/skill.md` | V1 SKILL.md（触发词、命令说明） |
+| `bangumi_explorer/skill.md` | bangumi_explorer SKILL.md（触发词、命令说明） |
 
 ---
 
 ## 八、注意事项
 
-1. **命名约定**：V1/V2/V3 的目录名是口头约定的，文档中未强制要求，但建议保持一致
-2. **版本独立**：三版是独立发布的，用户按需下载，不是升级关系
-3. **缓存位置**：V1/V2 共用 `~/.bangumi/`，V3 使用 `~/.bangumi-mcp/`
+1. **命名约定**：bangumi_explorer / bangumi_tracker / bangumi_tracker_web 的目录名是口头约定的，文档中未强制要求，但建议保持一致
+2. **版本独立**：三个版本是独立发布的，用户按需下载，不是升级关系
+3. **缓存位置**：bangumi_explorer 和 bangumi_tracker 共用 `~/.bangumi/`，bangumi_tracker_web 使用 `~/.bangumi-mcp/`
 4. **API限制**：Bangumi API 要求自定义 User-Agent，已硬编码在脚本中
 
 ---

@@ -12,7 +12,7 @@
 - 用户收藏与观看进度管理
 - 声优/制作人员查询
 
-分三版迭代，每版独立可用。
+分三个版本迭代，每版独立可用。
 
 ---
 
@@ -123,7 +123,7 @@ C:\Users\xingy\.openclaw-autoclaw\skills\bangumi-tracker\
 
 ## 五、Bangumi API 映射
 
-### V1 使用的端点（无需认证）
+### bangumi_explorer 使用的端点（无需认证）
 
 | 功能 | 方法 | 端点 | 参数 |
 |------|------|------|------|
@@ -136,7 +136,7 @@ C:\Users\xingy\.openclaw-autoclaw\skills\bangumi-tracker\
 | 人物作品 | GET | `/v0/persons/{id}/subjects` | `type`, `limit` |
 | 角色详情 | GET | `/v0/characters/{id}` | - |
 
-### V2 新增端点（需要 OAuth）
+### bangumi_tracker 新增端点（需要 OAuth）
 
 | 功能 | 方法 | 端点 | 参数 |
 |------|------|------|------|
@@ -165,7 +165,7 @@ Content-Type: application/json       # POST 请求
 
 ---
 
-## 六、V1 详细设计：信息查询版
+## 六、bangumi_explorer 详细设计：信息查询版
 
 ### SKILL.md 设计（目标 ~50 行，~500 token）
 
@@ -179,7 +179,7 @@ Content-Type: application/json       # POST 请求
 6. 版本标记                                      ~5 行
 ```
 
-**触发词**：`查番`、`bgm`、`bangumi`、`番剧搜索`、`当季新番`、`番表`、`查评分`、`查声优`、`查角色`
+**触发词**：`查番`、`bgm`、`bangumi`、`番剧搜索`、`当季新番`、`番表`、`查评分`、`查声优`、`查角色`、`bangumi_explorer`
 
 ### 脚本命令设计
 
@@ -296,11 +296,11 @@ def main()  # argparse + 路由
 
 ---
 
-## 七、V2 详细设计：本地用户版
+## 七、bangumi_tracker 详细设计：本地用户版
 
 ### SKILL.md 新增内容（目标增量 ~20 行，~200 token）
 
-在 V1 基础上新增：
+在 bangumi_explorer 基础上新增：
 1. OAuth 首次授权流程说明
 2. 4 条新命令
 3. 错误提示（token 过期/未授权）
@@ -400,7 +400,7 @@ def api_post_auth(path, data=None) -> dict
 
 ---
 
-## 八、V3 详细设计：服务器 MCP 版
+## 八、bangumi_tracker_web 详细设计：服务器 MCP 版
 
 ### SKILL.md 新增内容（目标增量 ~20 行，~200 token）
 
@@ -575,7 +575,7 @@ class BangumiMCPServer:
     def stop()
 ```
 
-### V3 部署方式
+### bangumi_tracker_web 部署方式
 
 ```json
 // OpenClaw 配置中的 MCP Server 注册
@@ -594,10 +594,10 @@ class BangumiMCPServer:
 
 ### 多用户 Token 管理
 
-V3 支持两种模式：
+bangumi_tracker_web 支持两种模式：
 
 **模式 A：本地单用户（默认）**
-- 与 V2 行为一致，token 存本地 SQLite
+- 与 bangumi_tracker 行为一致，token 存本地 SQLite
 - 适合个人使用
 
 **模式 B：远程多用户**
@@ -629,17 +629,17 @@ def auth_status():
 
 | 版本 | 新增行数 | 累计行数 | 预估 Token/次 | 说明 |
 |------|---------|---------|--------------|------|
-| V1 | ~50 行 | ~50 行 | ~500 | 基础查询 |
-| V2 | ~20 行 | ~70 行 | ~700 | +OAuth +收藏 |
-| V3 | ~20 行 | ~90 行 | ~900 | +MCP 说明 |
+| bangumi_explorer | ~50 行 | ~50 行 | ~500 | 基础查询 |
+| bangumi_tracker | ~20 行 | ~70 行 | ~700 | +OAuth +收藏 |
+| bangumi_tracker_web | ~20 行 | ~90 行 | ~900 | +MCP 说明 |
 
 ### 脚本行数预估
 
 | 模块 | 行数 | 说明 |
 |------|------|------|
-| bangumi.py 核心（V1） | ~300 行 | 查询 + 缓存 + 格式化 |
-| bangumi.py OAuth（V2） | ~200 行 | +授权 +收藏 |
-| bangumi_mcp_server.py（V3） | ~400 行 | MCP 协议 + SQLite |
+| bangumi.py 核心（bangumi_explorer） | ~300 行 | 查询 + 缓存 + 格式化 |
+| bangumi.py OAuth（bangumi_tracker） | ~200 行 | +授权 +收藏 |
+| bangumi_mcp_server.py（bangumi_tracker_web） | ~400 行 | MCP 协议 + SQLite |
 | 合计 | ~900 行 | |
 
 ### Token 开销对比（vs 内联 API 调用）
@@ -656,7 +656,7 @@ def auth_status():
 
 ## 十、开发路线图
 
-### 阶段 1：V1 信息查询版
+### 阶段 1：bangumi_explorer 信息查询版
 
 ```
 步骤 1.1  搭建脚本骨架（CLI 解析 + 网络层 + 缓存层）     1h
@@ -666,21 +666,21 @@ def auth_status():
 步骤 1.5  端到端测试                                   0.5h
 ```
 
-**V1 交付物**：`bangumi.py` + `SKILL.md`，可搜索/查详情/看番表
+**bangumi_explorer 交付物**：`bangumi.py` + `SKILL.md`，可搜索/查详情/看番表
 
-### 阶段 2：V2 本地用户版
+### 阶段 2：bangumi_tracker 本地用户版
 
 ```
 步骤 2.1  实现 OAuth 授权流程（浏览器 + localhost 回调）  1h
 步骤 2.2  实现 token 存储/加载/自动刷新                 0.5h
 步骤 2.3  实现收藏查询/修改/集数标记                     1h
-步骤 2.4  更新 SKILL.md（追加 V2 内容）                 0.5h
+步骤 2.4  更新 SKILL.md（追加 bangumi_tracker 内容）                 0.5h
 步骤 2.5  端到端测试（含 OAuth 全流程）                  0.5h
 ```
 
-**V2 交付物**：V1 全部 + 收藏管理 + OAuth
+**bangumi_tracker 交付物**：bangumi_explorer 全部 + 收藏管理 + OAuth
 
-### 阶段 3：V3 服务器 MCP 版
+### 阶段 3：bangumi_tracker_web 服务器 MCP 版
 
 ```
 步骤 3.1  搭建 MCP Server 骨架（协议解析 + 工具注册）     1h
@@ -688,19 +688,19 @@ def auth_status():
 步骤 3.3  SQLite 集成（用户 + 缓存）                     0.5h
 步骤 3.4  Web 授权页（多用户支持）                        1h
 步骤 3.5  Token 自动刷新后台任务                          0.5h
-步骤 3.6  更新 SKILL.md（追加 V3 内容）                 0.5h
+步骤 3.6  更新 SKILL.md（追加 bangumi_tracker_web 内容）                 0.5h
 步骤 3.7  端到端测试（MCP 协议 + 多用户）                 1h
 ```
 
-**V3 交付物**：V2 全部 + MCP Server + 多用户支持
+**bangumi_tracker_web 交付物**：bangumi_tracker 全部 + MCP Server + 多用户支持
 
 ### 总工时
 
 | 阶段 | 工时 | 累计 |
 |------|------|------|
-| V1 | 4h | 4h |
-| V2 | 3.5h | 7.5h |
-| V3 | 5.5h | 13h |
+| bangumi_explorer | 4h | 4h |
+| bangumi_tracker | 3.5h | 7.5h |
+| bangumi_tracker_web | 5.5h | 13h |
 
 ---
 
