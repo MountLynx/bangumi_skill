@@ -9,9 +9,29 @@ description: >
   bgm, bangumi, or any ACGN subject inquiry.
 ---
 
-# Bangumi Explorer — V1 Public Query
+# Bangumi Explorer — Public Query
 
-## Commands
+## Environment Check
+
+Before using this skill, check if Python is available:
+
+```bash
+python --version  # or python3 --version
+```
+
+**If Python 3.9+ is available:** Use the commands below with `bangumi.py` script (recommended, token-efficient).
+
+**If Python is NOT available:** Use the fallback method — call Bangumi API directly via `web_fetch` or `browser`. This works without Python but consumes significantly more tokens (~3-5x) and is slower.
+
+### Fallback API Reference
+
+- **API Base**: `https://api.bgm.tv/v0`
+- **User-Agent Required**: `clawbot/1.0 (private)`
+- **Rate Limit**: 0.5s between requests
+- **OpenAPI Spec**: https://github.com/bangumi/api/blob/master/open-api/v0.yaml
+- **API Docs**: https://github.com/bangumi/api
+
+## Commands (Python Mode - Recommended)
 
 Run `bangumi.py` via `exec` in the skill directory. Present script output as-is — do not reformat.
 
