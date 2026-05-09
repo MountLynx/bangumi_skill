@@ -2,6 +2,10 @@
 
 Agent Skills for Bangumi (bgm.tv) - 番剧搜索、新番追踪、评分查询。
 
+## 注：项目已放弃（mcp版处于未开发状态）
+
+已有更全面的项目 https://github.com/aronnaxlin/bgm-cli
+
 ## 快速开始
 
 ### 使用 Vercel Skills CLI安装
@@ -42,7 +46,7 @@ npx skills add MountLynx/bangumi_skill --all
 |------|------|------|----------|
 | **bangumi-explorer** | ✅ 可用 | 公开查询：搜索、详情、番表、排行、人物 | 无需登录，开箱即用 |
 | **bangumi-tracker** | ✅ 可用 | + OAuth 登录、收藏管理、观看进度 | 本地单用户，需要管理个人收藏 |
-| **bangumi (MCP)** | ✅ 可用 | + MCP 协议、多用户支持 | 服务器部署、多用户环境 |
+| **bangumi (MCP)** | 不可用 | + MCP 协议、多用户支持 | 服务器部署、多用户环境 |
 
 ### bangumi-explorer
 
